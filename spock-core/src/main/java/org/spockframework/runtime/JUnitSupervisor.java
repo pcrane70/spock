@@ -16,7 +16,7 @@ package org.spockframework.runtime;
 
 import org.junit.ComparisonFailure;
 import org.junit.internal.AssumptionViolatedException;
-import org.junit.runners.model.MultipleFailureException;
+import org.junit.internal.runners.model.MultipleFailureException;
 import org.junit.runner.Description;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
@@ -39,7 +39,7 @@ public class JUnitSupervisor implements IRunSupervisor {
   private boolean errorSinceLastReset;
 
   public JUnitSupervisor(SpecInfo spec, RunNotifier notifier, IStackTraceFilter filter,
-                         IObjectRenderer<Object> diffedObjectRenderer) {
+      IObjectRenderer<Object> diffedObjectRenderer) {
     this.spec = spec;
     this.notifier = notifier;
     this.filter = filter;
@@ -111,29 +111,23 @@ public class JUnitSupervisor implements IRunSupervisor {
   private boolean isFailedEqualityComparison(Throwable exception) {
     if (!(exception instanceof ConditionNotSatisfiedError)) return false;
 
-    final ConditionNotSatisfiedError conditionNotSatisfiedError = (ConditionNotSatisfiedError) exception;
-    Condition condition = conditionNotSatisfiedError.getCondition();
+    Condition condition = ((ConditionNotSatisfiedError) exception).getCondition();
     ExpressionInfo expr = condition.getExpression();
     return expr != null && expr.isEqualityComparison() && // it is equality
-        conditionNotSatisfiedError.getCause() == null;    // and it is not failed because of exception
+        exception.getCause() == null;    // and it is not failed because of exception
   }
 
   // enables IDE support (diff dialog)
   private Throwable convertToComparisonFailure(Throwable exception) {
     assert isFailedEqualityComparison(exception);
 
-    final ConditionNotSatisfiedError conditionNotSatisfiedError = (ConditionNotSatisfiedError) exception;
-    Condition condition = conditionNotSatisfiedError.getCondition();
+    Condition condition = ((ConditionNotSatisfiedError) exception).getCondition();
     ExpressionInfo expr = condition.getExpression();
 
     String actual = renderValue(expr.getChildren().get(0).getValue());
     String expected = renderValue(expr.getChildren().get(1).getValue());
     ComparisonFailure failure = new SpockComparisonFailure(condition, expected, actual);
     failure.setStackTrace(exception.getStackTrace());
-
-    if (conditionNotSatisfiedError.getCause() != null) {
-      failure.initCause(conditionNotSatisfiedError.getCause());
-    }
 
     return failure;
   }
@@ -177,9 +171,9 @@ public class JUnitSupervisor implements IRunSupervisor {
 
   public void afterFeature(FeatureInfo feature) {
     if (feature.isParameterized()) {
-      if (iterationCount == 0 && !errorSinceLastReset) {
-        notifier.fireTestFailure(new Failure(feature.getDescription(), new SpockExecutionException("Data provider has no data")));
-      }
+      if (iterationCount == 0 && !errorSinceLastReset)
+        notifier.fireTestFailure(new Failure(feature.getDescription(),
+            new SpockExecutionException("Data provider has no data")));
     }
 
     masterListener.afterFeature(feature);
