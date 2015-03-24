@@ -35,9 +35,6 @@ public class JUnitSupervisor implements IRunSupervisor {
   private final IRunListener masterListener;
   private final IObjectRenderer<Object> diffedObjectRenderer;
 
-  private int iterationCount;
-  private boolean errorSinceLastReset;
-
   public JUnitSupervisor(SpecInfo spec, RunNotifier notifier, IStackTraceFilter filter,
       IObjectRenderer<Object> diffedObjectRenderer) {
     this.spec = spec;
@@ -56,17 +53,11 @@ public class JUnitSupervisor implements IRunSupervisor {
 
     if (!feature.isReportIterations())
       notifier.fireTestStarted(feature.getDescription());
-
-    if (feature.isParameterized()) {
-      iterationCount = 0;
-      errorSinceLastReset = false;
-    }
   }
 
   public void beforeIteration(FeatureInfo currentFeature, IterationInfo iteration) {
     masterListener.beforeIteration(iteration);
 
-    iterationCount++;
     if (currentFeature.isReportIterations())
       notifier.fireTestStarted(iteration.getDescription());
   }
@@ -95,7 +86,6 @@ public class JUnitSupervisor implements IRunSupervisor {
       notifier.fireTestFailure(failure);
     }
 
-    errorSinceLastReset = true;
     return statusFor(error);
   }
 
@@ -169,13 +159,12 @@ public class JUnitSupervisor implements IRunSupervisor {
     }
   }
 
-  public void afterFeature(FeatureInfo feature) {
-    if (feature.isParameterized()) {
-      if (iterationCount == 0 && !errorSinceLastReset)
-        notifier.fireTestFailure(new Failure(feature.getDescription(),
-            new SpockExecutionException("Data provider has no data")));
-    }
+  public void noIterationFound(FeatureInfo currentFeature){
+    notifier.fireTestFailure(new Failure(currentFeature.getDescription(),
+        new SpockExecutionException("Data provider has no data")));
+  }
 
+  public void afterFeature(FeatureInfo feature) {
     masterListener.afterFeature(feature);
     if (!feature.isReportIterations()) {
       notifier.fireTestFinished(feature.getDescription());
