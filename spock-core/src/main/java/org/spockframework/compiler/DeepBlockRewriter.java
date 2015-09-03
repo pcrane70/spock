@@ -68,7 +68,21 @@ public class DeepBlockRewriter extends AbstractDeepBlockRewriter {
       AstUtil.fixUpLocalVariables(resources.getCurrentMethod().getAst().getParameters(), expr.getVariableScope(), true);
     }
     super.doVisitClosureExpression(expr);
-    if (conditionFound) defineValueRecorder(expr);
+    if (conditionFound) {
+      defineValueRecorder(expr);
+      final List<Statement> statements = AstUtil.getStatements(expr);
+      statements.add(0, new ExpressionStatement(
+              AstUtil.createDirectMethodCall(
+                      new ClassExpression(resources.getAstNodeCache().SpockRuntime),
+                      resources.getAstNodeCache().SpockRuntime_StartNewErrorCollectionScope,
+                      new ArgumentListExpression())));
+
+      statements.add(new ExpressionStatement(
+              AstUtil.createDirectMethodCall(
+                      new ClassExpression(resources.getAstNodeCache().SpockRuntime),
+                      resources.getAstNodeCache().SpockRuntime_VerifyCollectedErrors,
+                      new ArgumentListExpression())));
+    }
   }
 
   @Override

@@ -32,7 +32,7 @@ import java.util.ListIterator;
  */
 @SuppressWarnings("UnusedDeclaration")
 public abstract class SpockRuntime {
-  private static final ThreadLocal<List<Throwable>> ERROR_COLLECTOR_THREAD_LOCAL = new ThreadLocal<List<Throwable>>();
+  private static final ThreadLocal<ErrorCollectorsStack> ERROR_COLLECTOR_THREAD_LOCAL = new ThreadLocal<ErrorCollectorsStack>();
 
   public static final String VERIFY_CONDITION = "verifyCondition";
 
@@ -101,9 +101,12 @@ public abstract class SpockRuntime {
   public static final String VERIFY_COLLECTED_ERRORS = "verifyCollectedErrors";
 
   public static void verifyCollectedErrors() throws Throwable {
-    final List<Throwable> errorCollector = ERROR_COLLECTOR_THREAD_LOCAL.get();
+    final ErrorCollectorsStack errorCollector = ERROR_COLLECTOR_THREAD_LOCAL.get();
     if (errorCollector != null) {
-      MultipleFailureException.assertEmpty(errorCollector);
+      final List<Throwable> throwableList = errorCollector.removeCurrentScope();
+      if (throwableList != null) {
+        MultipleFailureException.assertEmpty(throwableList);
+      }
     }
   }
 
@@ -111,10 +114,19 @@ public abstract class SpockRuntime {
 
   public static void setupErrorCollector(Specification specification){
     final boolean errorCollectionEnabled = specification.getSpecificationContext().getCurrentFeature().isErrorCollectionEnabled();
-    if (errorCollectionEnabled){
-      ERROR_COLLECTOR_THREAD_LOCAL.set(new ArrayList<Throwable>());
-    }else {
+    if (errorCollectionEnabled) {
+      ERROR_COLLECTOR_THREAD_LOCAL.set(new ErrorCollectorsStack());
+    } else {
       ERROR_COLLECTOR_THREAD_LOCAL.remove();
+    }
+  }
+
+  public static final String START_NEW_ERROR_COLLECTION_SCOPE = "startNewErrorCollectionScope";
+
+  public static void startNewErrorCollectionScope(){
+    final ErrorCollectorsStack errorCollector = ERROR_COLLECTOR_THREAD_LOCAL.get();
+    if (errorCollector != null) {
+      errorCollector.startNewScope();
     }
   }
 
@@ -135,9 +147,9 @@ public abstract class SpockRuntime {
   }
 
   private static <T extends Throwable> void collectOrThrow(T throwable) throws T {
-    final List<Throwable> errorCollector = ERROR_COLLECTOR_THREAD_LOCAL.get();
+    final ErrorCollectorsStack errorCollector = ERROR_COLLECTOR_THREAD_LOCAL.get();
     if (errorCollector != null) {
-      errorCollector.add(throwable);
+      errorCollector.addException(throwable);
     } else {
       throw throwable;
     }
@@ -207,6 +219,22 @@ public abstract class SpockRuntime {
       }
 
       return null;
+    }
+  }
+
+  private static class ErrorCollectorsStack {
+    private final List<List<Throwable>> data = new ArrayList<List<Throwable>>();
+
+    public void startNewScope() {
+      data.add(new ArrayList<Throwable>());
+    }
+
+    public void addException(Throwable e) {
+      data.get(data.size() - 1).add(e);
+    }
+
+    public List<Throwable> removeCurrentScope() {
+      return data.remove(data.size() - 1);
     }
   }
 }

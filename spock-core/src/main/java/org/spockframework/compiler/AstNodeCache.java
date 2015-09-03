@@ -55,6 +55,9 @@ public class AstNodeCache {
   public final MethodNode SpockRuntime_SetupErrorCollector =
       SpockRuntime.getDeclaredMethods(org.spockframework.runtime.SpockRuntime.SETUP_ERROR_COLLECTOR).get(0);
 
+  public final MethodNode SpockRuntime_StartNewErrorCollectionScope =
+      SpockRuntime.getDeclaredMethods(org.spockframework.runtime.SpockRuntime.START_NEW_ERROR_COLLECTION_SCOPE).get(0);
+
   public final MethodNode ValueRecorder_Reset =
       ValueRecorder.getDeclaredMethods(org.spockframework.runtime.ValueRecorder.RESET).get(0);
 

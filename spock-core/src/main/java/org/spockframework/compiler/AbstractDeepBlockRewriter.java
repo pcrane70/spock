@@ -86,6 +86,11 @@ public class AbstractDeepBlockRewriter extends StatementReplacingVisitorSupport 
               new ClassExpression(resources.getAstNodeCache().SpockRuntime),
               resources.getAstNodeCache().SpockRuntime_SetupErrorCollector,
               new ArgumentListExpression(VariableExpression.THIS_EXPRESSION))));
+      block.getAst().add(1, new ExpressionStatement(
+          AstUtil.createDirectMethodCall(
+              new ClassExpression(resources.getAstNodeCache().SpockRuntime),
+              resources.getAstNodeCache().SpockRuntime_StartNewErrorCollectionScope,
+              new ArgumentListExpression())));
 
       block.getAst().add(new ExpressionStatement(
           AstUtil.createDirectMethodCall(
