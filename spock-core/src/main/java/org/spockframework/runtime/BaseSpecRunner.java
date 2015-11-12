@@ -499,6 +499,13 @@ public class BaseSpecRunner {
     try {
       invocation.proceed();
     } catch (Throwable t) {
+      try{
+        SpockRuntime.verifyCollectedErrors();
+      }catch (Throwable collected){
+        // if there was previously collected errors, let's report them
+        t = collected;
+      }
+      runStatus.set(supervisor.error(currentFeature, currentIteration, new ErrorInfo(method, t)));
       ErrorInfo error = new ErrorInfo(method, t);
       runStatus.set(supervisor.error(currentFeature, currentIteration, error));
     }
