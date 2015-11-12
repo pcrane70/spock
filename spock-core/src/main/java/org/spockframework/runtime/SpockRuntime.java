@@ -103,9 +103,11 @@ public abstract class SpockRuntime {
   public static void verifyCollectedErrors() throws Throwable {
     final ErrorCollectorsStack errorCollector = ERROR_COLLECTOR_THREAD_LOCAL.get();
     if (errorCollector != null) {
-      final List<Throwable> throwableList = errorCollector.removeCurrentScope();
-      if (throwableList != null) {
-        MultipleFailureException.assertEmpty(throwableList);
+      if (errorCollector.isCurrentScopeExists()) {
+        final List<Throwable> throwableList = errorCollector.removeCurrentScope();
+        if (throwableList != null) {
+          MultipleFailureException.assertEmpty(throwableList);
+        }
       }
     }
   }
@@ -235,6 +237,10 @@ public abstract class SpockRuntime {
 
     public List<Throwable> removeCurrentScope() {
       return data.remove(data.size() - 1);
+    }
+
+    public boolean isCurrentScopeExists(){
+      return !data.isEmpty();
     }
   }
 }

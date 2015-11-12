@@ -163,18 +163,18 @@ class AssertionModeTest extends EmbeddedSpecification {
                       def "test1"() {
                           when:
                               def x = 2
+                              def y = null
                           then:
                               x == 3
-                              new TestHelpers().testAndThrow {
-                                  1 == 3
-                                  2 == 4
-                              }
+                              y.abc()
                       }
                   }""")
           runner.throwFailure = false
           def result = runner.runClass(clazz[0])
       then:
-          result.failures.size() == 3
+          result.failures.size() == 1
+          result.failures[0].exception.expected.trim() == "3"
+          result.failures[0].exception.actual.trim() == "2"
   }
 
 
