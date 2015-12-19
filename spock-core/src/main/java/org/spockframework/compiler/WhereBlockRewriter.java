@@ -87,15 +87,15 @@ public class WhereBlockRewriter {
         rewriteSimpleParameterization(binExpr, stat);
       else if (leftExpr instanceof ListExpression)
         rewriteMultiParameterization(binExpr, stat);
-      else 
+      else
         notAParameterization(stat);
     } else if (type == Types.ASSIGN)
-      rewriteDerivedParameterization(binExpr, stat);
+      rewriteSimpleParameterization(binExpr, stat);
     else if (getOrExpression(binExpr) != null) {
       stats.previous();
       rewriteTableLikeParameterization(stats);
     }
-    else 
+    else
       notAParameterization(stat);
   }
 
@@ -107,7 +107,7 @@ public class WhereBlockRewriter {
     MethodNode method =
         new MethodNode(
             InternalIdentifiers.getDataProviderName(whereBlock.getParent().getAst().getName(), dataProviderCount++),
-            Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC,
+            Opcodes.ACC_PUBLIC /*| Opcodes.ACC_SYNTHETIC*/,
             ClassHelper.OBJECT_TYPE,
             getPreviousParameters(nextDataVariableIndex),
             ClassNode.EMPTY_ARRAY,
@@ -273,19 +273,19 @@ public class WhereBlockRewriter {
       splitRow(orExpr.getRightExpression(), parts);
     }
   }
-  
+
   private BinaryExpression getOrExpression(Statement stat) {
     Expression expr = AstUtil.getExpression(stat, Expression.class);
     return getOrExpression(expr);
   }
-  
+
   private BinaryExpression getOrExpression(Expression expr) {
     BinaryExpression binExpr = ObjectUtil.asInstance(expr, BinaryExpression.class);
     if (binExpr == null) return null;
-    
+
     int binExprType = binExpr.getOperation().getType();
     if (binExprType == Types.BITWISE_OR || binExprType == Types.LOGICAL_OR) return binExpr;
-    
+
     return null;
   }
 
@@ -353,7 +353,7 @@ public class WhereBlockRewriter {
   @SuppressWarnings("unchecked")
   private void createDataProcessorMethod() {
     if (dataProcessorVars.isEmpty()) return;
-    
+
     dataProcessorStats.add(
         new ReturnStatement(
             new ArrayExpression(
@@ -366,7 +366,7 @@ public class WhereBlockRewriter {
     whereBlock.getParent().getParent().getAst().addMethod(
       new MethodNode(
           InternalIdentifiers.getDataProcessorName(whereBlock.getParent().getAst().getName()),
-          Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC,
+          Opcodes.ACC_PUBLIC /*| Opcodes.ACC_SYNTHETIC*/,
           ClassHelper.OBJECT_TYPE,
           dataProcessorParams.toArray(new Parameter[dataProcessorParams.size()]),
           ClassNode.EMPTY_ARRAY,
